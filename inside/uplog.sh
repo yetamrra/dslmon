@@ -43,6 +43,7 @@ SNRUP=""
 UPDAYS=""
 UPHOURS=""
 UPMINS=""
+IPADDR=""
 
 if [ -n "${MODEM_IP}" ] && [ -r "${BASEDIR}/modem-${MODEM_TYPE}" ]; then
     . "${BASEDIR}/modem-${MODEM_TYPE}"
@@ -53,13 +54,13 @@ fi
 STATS_TS="$(date +%Y-%m-%dT%H:%M:%S)"
 UPTIME="$(printf "%02d:%02d" $((${UPDAYS:-0} * 24 + ${UPHOURS:-0})) "${UPMINS:-0}")"
 
-if [ x"${EXTERNAL_IFACE}" = x"detect" ]; then
-    EXTERNAL_IFACE=$(ip route show  | grep default | sed -ne 's/.* dev \([^ ]*\) .*/\1/p')
-fi
-if [ -n "${EXTERNAL_IFACE}" ]; then
-    IPADDR="$(ip -o -4 addr show dev "${EXTERNAL_IFACE}" 2>/dev/null | sed -ne 's/.*inet \([0-9.]*\).*/\1/p')"
-else
-    IPADDR=""
+if [ -z "${IPADDR}" ]; then
+    if [ x"${EXTERNAL_IFACE}" = x"detect" ]; then
+        EXTERNAL_IFACE="$(ip route show  | grep default | sed -ne 's/.* dev \([^ ]*\) .*/\1/p')"
+    fi
+    if [ -n "${EXTERNAL_IFACE}" ]; then
+        IPADDR="$(ip -o -4 addr show dev "${EXTERNAL_IFACE}" 2>/dev/null | sed -ne 's/.*inet \([0-9.]*\).*/\1/p')"
+    fi
 fi
 if [ -z "${EXTERNAL_IFACE}" ] || [ -n "${IPADDR}" ] ; then
     LATENCY="$(ping -c 5 "${PING_HOST}" 2>/dev/null | tail -n1 | sed -ne 's/.*= \([0-9.][0-9.]*\).*$/\1/p')"

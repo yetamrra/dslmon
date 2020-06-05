@@ -19,6 +19,9 @@ START_DELAY=3
 #          blank if none.
 #   *  UPMINS: Number of full minutes since the last line change, or
 #          blank if none.
+#   *  IPADDR: Optional.  If the modem hosts the external IP, you
+#          can emit it here (and probably unset EXTERNAL_IFACE below.
+#          Leave blank if the modem is in transparent bridging mode.
 # UPDAYS, UPHOURS, and UPMINS together represent the uptime of the line.
 # For example, if the last connection happened 27h 55m 27s ago, this
 # could be reported as UPDAYS=1, UPHOURS=3, UPMINS=55.
