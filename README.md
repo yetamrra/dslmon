@@ -89,3 +89,55 @@ From this example, we can quickly learn a few things:
    logs themselves don't say why the connection dropped, so this is again
    something that requires you to have some external method to provide the
    explanation.
+
+# Components
+
+## Inside network
+
+The script running inside the network is a basic shell script.  It requires:
+
+* busybox or a similar set of basic utilities
+* ash, or similar POSIX-like shell (no bash features are used)
+* curl
+* cron
+
+The reason to be so restrictive is so that it can run on a low-power device
+that is always on.  I run it on my OpenWrt-based router, since that is always
+on when my network is on.  Running directly on the router also eliminates the
+possibility of a failure in some other network switch or other computer on my
+network.
+
+The script attempts to collect stats from the DSL modem and record them
+locally.  If you don't have a C1100Z, you'll need to swap this part out or
+disable it.  The local logs can be correlated with the external logs to
+eliminate/explain some outages, but no scripts to do that automatically are
+currently part of the project.  I personally load the local logs into a
+postgresql database on my normal desktop machine when I want to do some ad hoc
+analysis.
+
+## Local analysis
+
+The script running inside the network also generates tab-separated files stored
+locally on the modem.  These contain extra information, such as the SNR and
+latency.  Here is an example schema that can be used to load them into
+postgresql for analysis:
+
+```sql
+CREATE TABLE UPLOG (
+    timestamp TIMESTAMP,
+    ip INET,
+    uptime VARCHAR(20),
+    kbps_dn INT,
+    kbps_up INT,
+    snr_dn NUMERIC(5,1),
+    snr_up NUMERIC(5,1),
+    latency NUMERIC(5,1)
+);
+```
+
+And then loaded from the psql client like this:
+
+```
+DELETE FROM uplog WHERE timestamp >= '2020-05-01' AND timestamp < '2020-06-01';
+\copy uplog from /path/to/uplog.202005.csv csv delimiter E'\t' header;
+```

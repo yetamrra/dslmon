@@ -1,0 +1,19 @@
+# Gets modem info from a ZyXEL C1100Z DSL modem by scripting telnet.
+#
+# nc reads lines from c1100z.script and sends them to telnet on the modem to
+# get the output from adsl info.  Then the various pieces of info are extracted
+# by looking for expected text patterns.
+
+OUTPUT=$( cat "${BASEDIR}/modem-c1100z.script" | ( while read -r ; do sleep 2; echo "$REPLY"; done ) | nc "${MODEM_IP}" 23)
+
+BWDN="$( echo "$OUTPUT" | sed -n -e 's/.*\(Bearer\|Channel\):.*Downstream rate = \([0-9][0-9]*\) Kbps.*/\2/p' )"
+BWUP="$( echo "$OUTPUT" | sed -n -e 's/.*\(Bearer\|Channel\):.*Upstream rate = \([0-9][0-9]*\) Kbps.*/\2/p' )"
+
+SNRDN="$( echo "$OUTPUT" | grep 'SNR' | awk '{print $3}' | tr -d '\r' )"
+SNRUP="$( echo "$OUTPUT" | grep 'SNR' | awk '{print $4}' | tr -d '\r' )"
+
+UPDAYS="$(echo "$OUTPUT" | sed -n -e 's/.*[sS]ince [Ll]ink time.* \([0-9][0-9]*\) day.*/\1/p')"
+UPHOURS="$(echo "$OUTPUT" | sed -n -e 's/.*[sS]ince [Ll]ink time.* \([0-9][0-9]*\) hour.*/\1/p')"
+UPMINS="$(echo "$OUTPUT" | sed -n -e 's/.*[sS]ince [Ll]ink time.* \([0-9][0-9]*\) min.*/\1/p')"
+
+unset OUTPUT

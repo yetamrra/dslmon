@@ -1,0 +1,68 @@
+# Number of seconds to delay before starting.
+# This is primarily useful to avoid running into anything else that might
+# run in the same minute.
+START_DELAY=3
+
+# If a modem-${MODEM_TYPE} file is found in the same directory
+# as the main script, it will be sourced to pull stats from the
+# modem.  The script should not produce any output, but should set
+# the following variables:
+#   *  BWDN: Integer downstream bandwidth in Kbps, e.g. 7114
+#   *  BWUP: Integer upstream bandwidth in Kbps, e.g. 896
+#   *  SNRDN: Decimal downstream SNR margin in dB, e.g. 10.1
+#   *  SNRUP: Decimal upstream SNR margin in dB, e.g. 7.2
+#   *  UPDAYS: Number of full days since the last line change, or
+#          blank if none.  If it makes more sense, this can also
+#          be left blank and reported in UPHOURS rather than breaking
+#          out days separately.
+#   *  UPHOURS: Number of full hours since the last line change, or
+#          blank if none.
+#   *  UPMINS: Number of full minutes since the last line change, or
+#          blank if none.
+# UPDAYS, UPHOURS, and UPMINS together represent the uptime of the line.
+# For example, if the last connection happened 27h 55m 27s ago, this
+# could be reported as UPDAYS=1, UPHOURS=3, UPMINS=55.
+#
+# Set to "none" to indicate that modem stats should not be attempted.
+MODEM_TYPE=none
+
+# Set to the IP of your modem.  Modem stats will not be collected if an IP is
+# not set.  If running the script on the modem, set to 127.0.0.1.
+MODEM_IP=
+
+# If running this script directly on the router connected to the internet,
+# set this to the name of the interface that has the external IP.
+# Leave blank if the external IP can't be determined directly on the
+# machine running the main script.
+#
+# Set to "detect" to try to detect the appropriate interface name based
+# on the default route.
+EXTERNAL_IFACE=
+
+# Set to the name of some external host that responds to pings so that
+# latency can be measured.  Potentially a good idea to set this to the
+# same host as BASE_URL so that you are measuring the latency to
+# somewhere meaningful to yourself.
+PING_HOST=google.com
+
+# Full path where local stats will be logged.
+# Set to /dev/null if you don't want to save logs locally.
+LOGFILE="/tmp/uplog.$(date +%Y%m).csv"
+
+# The base URL that should be contacted to record stats.  The following
+# additional query parameters will be appended:
+#   *  ?YYYYMMDDHHMMSS: The local time of the beginning of the request.
+#          This can be matched up to the time recorded in the server logs
+#          to determine the timezone offset or any delays in the HTTP
+#          request.
+#   *  &d=$BWDN: Downstream bandwidth from the modem, if known.
+#   *  &u=$BWUP: Upstream bandwidth from the modem, if known.
+#   *  &t=$UPTIME: Modem's reported connection uptime in the format
+#          HHH:MM (no separate days), if known.
+# You must set this or the script will not attempt to submit remote stats.
+BASE_URL=
+
+# Number of seconds to wait for connecting to the external host when
+# submitting stats.  An additional 2s will be allowed for the request
+# to complete once the connection is established.
+CONNECT_TIMEOUT=5
