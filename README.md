@@ -23,6 +23,20 @@ If you want to use it, you _will_ have to customize it for your own hardware
 and network.  Pull requests to add additional modem support or bug fixes are
 welcome as long as they don't add additional requirements.
 
+## Installation and Usage
+
+1.  Copy `inside/uplog.sh`, `inside/config`, and the appropriate modem scripts
+    (if any) to your router or an always-on computer on your local network.
+1.  Edit `config` and adjust the variables for your setup.  You must at least
+    set `BASE_URL` if you want to collect stats externally.
+1.  It helps to touch the file referred to in `BASE_URL` on your web server.
+    This prevents 404 errors from being logged.  The file itself doesn't need
+    any particular contents: The local script ignores the response and the
+    analysis script just needs the logs.
+1.  Add a crontab on your local computer to run `uplog.sh` every minute.
+1.  Copy `outside/missing_dsl_checkins.pl` to a computer that can access the
+    web server logs and run it as desired to see stats.
+
 ## Example analysis
 
 Here is an example of the output:
