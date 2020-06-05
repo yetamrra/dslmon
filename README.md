@@ -115,6 +115,24 @@ currently part of the project.  I personally load the local logs into a
 postgresql database on my normal desktop machine when I want to do some ad hoc
 analysis.
 
+## Outside network
+
+On the outside, the script needs to send requests to a web server that logs in
+the apache common log format.  You will need access to those logs.  If you want
+to generate and view the stats file shown in the example above, you will also
+need cron, perl, and bash on the same web server.
+
+The perl script generates colorized output if you run it on the terminal.
+There is also a bash script meant to be run from cron that strips the color
+escapes to create a plain text file.
+
+The current setup grabs the last 50k lines out of the apache logs and
+re-generates the output file every 10 minutes.  This produces approximately a
+two-week lookback on my web server.  You'll want to tune the numbers for your
+own activity level.  A straightforward change would be to scrape the logs into
+a database and then generate from there instead of directly piping into the
+perl script; implementation is left as an exercise for the reader.
+
 ## Local analysis
 
 The script running inside the network also generates tab-separated files stored
