@@ -62,30 +62,30 @@ my $bwdn;
 my $bwup;
 my $lineup;
 while (<>) {
-    if (! m-([\d.]+).*/uplog.txt\?(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(?:&d=(\d+)&u=(\d+)&t=([\d:]+))?-) {
+    if (! m-(?<ip>[\d.]+).*/uplog.txt\?(?<year>\d{4})(?<month>\d{2})(?<day>\d{2})(?<hour>\d{2})(?<min>\d{2})(?<sec>\d{2})(?:&d=(?<bwdn>\d+)&u=(?<bwup>\d+)&t=(?<uptime>[\d:]+))?-) {
         next;
     }
-    my $ip = $1;
-    $bwdn = $8 || '';
-    $bwup = $9 || '';
-    $lineup = $10 || '';
+    my $ip = $+{ip};
+    $bwdn = $+{bwdn} || '';
+    $bwup = $+{bwup} || '';
+    $lineup = $+{uptime} || '';
 
     # Skip past first partial day.
     if (!$first) {
-        $first = "$2$3$4";
+        $first = "$+{year}$+{month}$+{day}";
     }
-    if ("$2$3$4" eq $first) {
+    if ("$+{year}$+{month}$+{day}" eq $first) {
         $lastIP = $ip;
         next;
     }
 
     $ts = DateTime->new(
-        year => $2,
-        month => $3,
-        day => $4,
-        hour => $5,
-        minute => $6,
-        second => $7,
+        year => $+{year},
+        month => $+{month},
+        day => $+{day},
+        hour => $+{hour},
+        minute => $+{min},
+        second => $+{sec},
         time_zone => 'America/Denver'
     );
     if (!$firstTS) {
