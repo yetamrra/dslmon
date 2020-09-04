@@ -62,7 +62,7 @@ my $bwdn;
 my $bwup;
 my $lineup;
 while (<>) {
-    if (! m-(?<ip>[\d.]+).*/uplog.txt\?(?<year>\d{4})(?<month>\d{2})(?<day>\d{2})(?<hour>\d{2})(?<min>\d{2})(?<sec>\d{2})(?:&d=(?<bwdn>\d+)&u=(?<bwup>\d+)&t=(?<uptime>[\d:]+))?-) {
+    if (! m-^(?<ip>[\d.]+)\s.*/uplog.txt\?(?<year>\d{4})(?<month>\d{2})(?<day>\d{2})(?<hour>\d{2})(?<min>\d{2})(?<sec>\d{2})(?:&d=(?<bwdn>\d+)&u=(?<bwup>\d+)&t=(?<uptime>[\d:]+))?-) {
         next;
     }
     my $ip = $+{ip};
