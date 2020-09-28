@@ -20,6 +20,8 @@ use warnings;
 use strict;
 use Apache::Log::Parser;
 use DBI;
+use Time::Piece;
+use Time::Seconds qw( ONE_MINUTE );
 
 if (scalar(@ARGV) < 1) {
     die "Usage: $0 config logfile logfile ...";
@@ -44,12 +46,23 @@ my $ins = $dbh->prepare(q{INSERT INTO uplog (logtime, dsltime, ip, uptime, kbps_
                                  VALUES (?,?,?,?,?,?)
                                  ON CONFLICT (logtime) DO NOTHING});
 
+# Find the latest date previously logged.  This allows us to redo a small
+# overlap instead of attempting to re-insert the entire log file.
+my ($logend) = $dbh->selectrow_array("SELECT TO_CHAR(MAX(logtime), 'YYYY-MM-DD HH24:MI:SSTZHTZM') FROM uplog");
+$logend = '1999-01-01 00:00:00-0000' if !$logend;
+$logend = Time::Piece->strptime($logend, '%Y-%m-%d %H:%M:%S%z');
+my $start = $logend - ONE_MINUTE * $config{logoverlap};
+
 my $rows = 0;
 while (<>) {
     chomp;
     my $entry = $parser->parse($_);
 
     next if (!$entry->{path});
+
+    my $logtime = Time::Piece->strptime($entry->{datetime}, '%d/%b/%Y:%H:%M:%S %z');
+    next if ($logtime < $start);
+
     next if ($entry->{path} !~ m{
             ^/uplog.txt\?
             (?<year>\d{4})(?<month>\d{2})(?<day>\d{2})(?<hour>\d{2})(?<min>\d{2})(?<sec>\d{2})
