@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use v5.10;
 use warnings;
 use strict;
 use Data::Dumper;
@@ -147,7 +148,7 @@ print sprintf("Last uptime: %s\n", $lineup);
 $first = 1;
 foreach my $day (keys %checkins) {
     if ($first || $day =~ m/01$/) {
-        print "\n             00    02    04    06    08    10    12    14    16    18    20    22     Out ΔIP\n";
+        say "\n             00    02    04    06    08    10    12    14    16    18    20    22     Out ΔIP";
         $first = 0;
     }
 
@@ -168,5 +169,5 @@ foreach my $day (keys %checkins) {
     $line .=  sprintf(" %4d", 1440-sum(@checks));
     $line .=  sprintf(" %3d", $checkins{$day}->{newips});
 
-    print "$day: $line\n";
+    say "$day: $line";
 }

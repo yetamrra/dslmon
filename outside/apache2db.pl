@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use v5.10;
 use warnings;
 use strict;
 use Apache::Log::Parser;
@@ -32,8 +33,8 @@ my %config = ();
 open my $fh, '<', $config or die "Unable to open config file $config";
 while (<$fh>) {
     chomp;
-    $_ =~ s/^\s*//;
-    $_ =~ s/\s*$//;
+    s/^\s*//;
+    s/\s*$//;
     next if m/^#/;
     my ($k, $v) = split /\s*=\s*/, $_, 2;
     $config{lc $k} = $v;
@@ -79,4 +80,4 @@ while (<>) {
 
 $dbh->commit();
 $dbh->disconnect();
-print "$rows new rows inserted.\n" if -t STDOUT;
+say "$rows new rows inserted." if -t STDOUT;
