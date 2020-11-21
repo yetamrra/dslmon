@@ -21,6 +21,8 @@ use warnings;
 use strict;
 use Data::Dumper;
 use DateTime;
+use DBI;
+use Getopt::Long;
 use List::Util qw(sum);
 use Tie::IxHash;
 use Term::ANSIColor;
@@ -53,6 +55,23 @@ sub dateKey {
     return $date;
 }
 
+my $config;
+my $days = 31;
+GetOptions('config=s' => \$config, 'days=i' => \$days);
+die "Usage: $0 --config=/path/to/config [--days=NN]\n" if !$config;
+
+my %config = ();
+open my $fh, '<', $config or die "Unable to open config file $config\n";
+while (<$fh>) {
+    chomp;
+    s/^\s*//;
+    s/\s*$//;
+    next if m/^#/;
+    my ($k, $v) = split /\s*=\s*/, $_, 2;
+    $config{lc $k} = $v;
+}
+close($fh);
+
 tie my %checkins, 'Tie::IxHash';
 my $first = "";
 my $ts;
@@ -62,31 +81,37 @@ my $firstTS;
 my $bwdn;
 my $bwup;
 my $lineup;
-while (<>) {
-    if (! m-^(?<ip>[\d.]+)\s.*/uplog.txt\?(?<year>\d{4})(?<month>\d{2})(?<day>\d{2})(?<hour>\d{2})(?<min>\d{2})(?<sec>\d{2})(?:&d=(?<bwdn>\d+)&u=(?<bwup>\d+)&t=(?<uptime>[\d:]+))?-) {
-        next;
-    }
-    my $ip = $+{ip};
-    $bwdn = $+{bwdn} || '';
-    $bwup = $+{bwup} || '';
-    $lineup = $+{uptime} || '';
+
+my $dbh = DBI->connect("dbi:Pg:dbname=$config{dbname}", $config{dbuser}, $config{dbpass}, {RaiseError => 1});
+my $sth = $dbh->prepare(q{SELECT ip,
+                                 extract(year from logtime), extract(month from logtime),
+                                 extract(day from logtime), extract(hour from logtime),
+                                 extract(minute from logtime), extract(second from logtime),
+                                 kbps_dn, kbps_up, uptime
+                          FROM uplog
+                          WHERE logtime >= current_date - ? * interval '1 day'
+                          ORDER BY logtime});
+$sth->execute("$days");
+while (my @row = $sth->fetchrow_array()) {
+    my ($ip, $year, $month, $day, $hour, $min, $sec);
+    ($ip, $year, $month, $day, $hour, $min, $sec, $bwdn, $bwup, $lineup) = @row;
 
     # Skip past first partial day.
     if (!$first) {
-        $first = "$+{year}$+{month}$+{day}";
+        $first = "${year}${month}${day}";
     }
-    if ("$+{year}$+{month}$+{day}" eq $first) {
+    if ("${year}${month}${day}" eq $first) {
         $lastIP = $ip;
         next;
     }
 
     $ts = DateTime->new(
-        year => $+{year},
-        month => $+{month},
-        day => $+{day},
-        hour => $+{hour},
-        minute => $+{min},
-        second => $+{sec},
+        year => $year,
+        month => $month,
+        day => $day,
+        hour => $hour,
+        minute => $min,
+        second => $sec,
         time_zone => 'America/Denver'
     );
     if (!$firstTS) {
@@ -116,6 +141,8 @@ while (<>) {
         $lastIPChange = $ts->clone();
     }
 }
+$sth->finish();
+$dbh->disconnect();
 
 # Add up hourly checkins
 foreach my $day(keys %checkins) {
