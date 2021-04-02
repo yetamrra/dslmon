@@ -81,8 +81,10 @@ my $firstTS;
 my $bwdn;
 my $bwup;
 my $lineup;
+my $tz = $ENV{TZ} || 'America/Denver';
 
 my $dbh = DBI->connect("dbi:Pg:dbname=$config{dbname}", $config{dbuser}, $config{dbpass}, {RaiseError => 1});
+$dbh->do('SET timezone TO ?', undef, $tz);
 my $sth = $dbh->prepare(q{SELECT ip,
                                  extract(year from logtime), extract(month from logtime),
                                  extract(day from logtime), extract(hour from logtime),
@@ -112,7 +114,7 @@ while (my @row = $sth->fetchrow_array()) {
         hour => $hour,
         minute => $min,
         second => $sec,
-        time_zone => 'America/Denver'
+        time_zone => $tz,
     );
     if (!$firstTS) {
         $firstTS = $ts;
