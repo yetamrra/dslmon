@@ -57,8 +57,9 @@ sub dateKey {
 
 my $config;
 my $days = 31;
-GetOptions('config=s' => \$config, 'days=i' => \$days);
-die "Usage: $0 --config=/path/to/config [--days=NN]\n" if !$config;
+my $reverse;
+GetOptions('config=s' => \$config, 'days=i' => \$days, 'reverse' => \$reverse);
+die "Usage: $0 --config=/path/to/config [--days=NN] [--reverse]\n" if !$config;
 
 my %config = ();
 open my $fh, '<', $config or die "Unable to open config file $config\n";
@@ -175,10 +176,19 @@ print sprintf("Last speed: %s/%s\n", $bwdn, $bwup);
 print sprintf("Last uptime: %s\n", $lineup);
 
 $first = 1;
-foreach my $day (keys %checkins) {
-    if ($first || $day =~ m/01$/) {
+my @days = $reverse ? (reverse keys %checkins) : (keys %checkins);
+foreach my $day (@days) {
+    # Print a header line at the beginning and between months.
+    if ($day =~ m/01$/ && !$reverse) {
+        $first = 1;
+    }
+    if ($first) {
         say "\n             00    02    04    06    08    10    12    14    16    18    20    22     Out ΔIP";
         $first = 0;
+    }
+    if ($day =~ m/01$/ && $reverse) {
+        # Print header before the next line.
+        $first = 1;
     }
 
     my $line = '';
