@@ -55,10 +55,27 @@ sub dateKey {
     return $date;
 }
 
+sub updateArrow {
+    my $cur = \$_[0];
+    my $new = $_[1];
+
+    if ($$cur eq ' ') {
+        $$cur = $new;
+    } elsif ($$cur ne $new) {
+        $$cur = '↕';
+    }
+}
+
 my $config;
 my $days = 31;
 my $reverse;
-GetOptions('config=s' => \$config, 'days=i' => \$days, 'reverse' => \$reverse);
+my $speed;
+GetOptions(
+    'config=s' => \$config,
+    'days=i' => \$days,
+    'reverse' => \$reverse,
+    'speed' => \$speed,
+);
 die "Usage: $0 --config=/path/to/config [--days=NN] [--reverse]\n" if !$config;
 
 my %config = ();
@@ -129,6 +146,12 @@ while (my @row = $sth->fetchrow_array()) {
             minutes => {},
             ips => {},
             newips => 0,
+            maxdn => $bwdn,
+            mindn => $bwdn,
+            deltadn => ' ',
+            maxup => $bwup,
+            minup => $bwup,
+            deltaup => ' ',
         };
         tie %{$checkins{$date}->{checkins}}, 'Tie::IxHash';
         foreach my $h ( 0..23) {
@@ -138,6 +161,26 @@ while (my @row = $sth->fetchrow_array()) {
     }
     $checkins{$date}->{minutes}->{$ts->hour}->{$ts->minute}++;
     $checkins{$date}->{ips}->{$ip} = 1;
+    if ($bwdn ne '') {
+        if ($bwdn > $checkins{$date}->{maxdn}) {
+            $checkins{$date}->{maxdn} = $bwdn;
+            updateArrow($checkins{$date}->{deltadn}, '↑');
+        }
+        if ($bwdn < $checkins{$date}->{mindn}) {
+            $checkins{$date}->{mindn} = $bwdn;
+            updateArrow($checkins{$date}->{deltadn}, '↓');
+        }
+    }
+    if ($bwup ne '') {
+        if ($bwup > $checkins{$date}->{maxup}) {
+            $checkins{$date}->{maxup} = $bwup;
+            updateArrow($checkins{$date}->{deltaup}, '↑');
+        }
+        if ($bwup < $checkins{$date}->{minup}) {
+            $checkins{$date}->{minup} = $bwup;
+            updateArrow($checkins{$date}->{deltaup}, '↓');
+        }
+    }
     if ($ip ne $lastIP) {
         $checkins{$date}->{newips}++;
         $lastIP = $ip;
@@ -183,7 +226,11 @@ foreach my $day (@days) {
         $first = 1;
     }
     if ($first) {
-        say "\n             00    02    04    06    08    10    12    14    16    18    20    22     Out ΔIP";
+        my $header = "\n             00    02    04    06    08    10    12    14    16    18    20    22     Out ΔIP";
+        if ($speed) {
+            $header .= "     Down       Up";
+        }
+        say $header;
         $first = 0;
     }
     if ($day =~ m/01$/ && $reverse) {
@@ -207,6 +254,15 @@ foreach my $day (@days) {
     }
     $line .=  sprintf(" %4d", 1440-sum(@checks));
     $line .=  sprintf(" %3d", $checkins{$day}->{newips});
-
+    if ($speed) {
+        $line .=  sprintf(" %9s", sprintf(" %s%.1f/%.1f",
+                          $checkins{$day}->{deltadn},
+                          $checkins{$day}->{maxdn} / 1000,
+                          $checkins{$day}->{mindn} / 1000));
+        $line .=  sprintf("  %s%3.1f/%3.1f",
+                          $checkins{$day}->{deltaup},
+                          $checkins{$day}->{maxup} / 1000,
+                          $checkins{$day}->{minup} / 1000);
+    }
     say "$day: $line";
 }
