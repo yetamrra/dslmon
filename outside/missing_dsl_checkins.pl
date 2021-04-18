@@ -161,7 +161,7 @@ while (my @row = $sth->fetchrow_array()) {
     }
     $checkins{$date}->{minutes}->{$ts->hour}->{$ts->minute}++;
     $checkins{$date}->{ips}->{$ip} = 1;
-    if ($bwdn ne '') {
+    if (defined $bwdn) {
         if ($bwdn > $checkins{$date}->{maxdn}) {
             $checkins{$date}->{maxdn} = $bwdn;
             updateArrow($checkins{$date}->{deltadn}, '↑');
@@ -171,7 +171,7 @@ while (my @row = $sth->fetchrow_array()) {
             updateArrow($checkins{$date}->{deltadn}, '↓');
         }
     }
-    if ($bwup ne '') {
+    if (defined $bwup) {
         if ($bwup > $checkins{$date}->{maxup}) {
             $checkins{$date}->{maxup} = $bwup;
             updateArrow($checkins{$date}->{deltaup}, '↑');
